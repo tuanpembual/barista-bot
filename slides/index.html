@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Barista Bot Ops — DevFest Jogjakarta 2026</title>
+<style>
+:root{
+  --bg:#080c0d; --bg2:#0d1413; --fg:#ffffff; --muted:#9fb3ab;
+  --g:#55c182; --g2:#58e16b; --g3:#2f7d55; --line:#1f3a2e;
+  --pill2:#c9f2cf;
+  --sans:"Google Sans","Product Sans","DM Sans",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:"Google Sans Mono","JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:var(--sans);color:var(--fg);-webkit-font-smoothing:antialiased}
+#viewport{position:fixed;inset:0;display:grid;place-items:center}
+#stage{width:1600px;height:900px;position:relative;transform-origin:center}
+.slide{position:absolute;inset:0;background:var(--bg);overflow:hidden;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.slide.active{opacity:1;pointer-events:auto}
+.pad{position:absolute;inset:0;padding:96px 120px}
+
+/* ---------- dekorasi template ---------- */
+.glow-bl{position:absolute;inset:0;background:radial-gradient(900px 700px at 0% 100%,rgba(70,180,110,.55),transparent 65%)}
+.glow-tr{position:absolute;inset:0;background:radial-gradient(700px 520px at 100% 0%,rgba(70,180,110,.42),transparent 65%)}
+.glow-r{position:absolute;inset:0;background:radial-gradient(900px 900px at 110% 60%,rgba(70,180,110,.35),transparent 60%)}
+.bars{position:absolute;top:0;display:flex;align-items:flex-start;gap:0}
+.bars i{display:block;width:130px;background:linear-gradient(180deg,rgba(60,170,105,.0) 0%,rgba(60,170,105,.35) 40%,rgba(85,200,130,.9) 100%);}
+.bars.tr{right:0;flex-direction:row}
+.bars.tr i{background:linear-gradient(200deg,rgba(100,230,150,.95),rgba(30,90,60,.15) 75%,transparent)}
+.bars.tl{left:60px}
+.bars.tl i{background:linear-gradient(200deg,rgba(100,230,150,.9),rgba(30,90,60,.15) 75%,transparent)}
+.icons{position:absolute;display:flex;flex-direction:column;gap:22px;opacity:.85}
+.icons svg{width:72px;height:72px;stroke:var(--g);fill:none;stroke-width:2.2}
+
+/* ---------- logo DevFest (dibuat ulang dengan CSS) ---------- */
+.devfest{position:absolute;display:inline-flex;align-items:center;gap:6px;font-weight:600;line-height:1}
+.devfest .br{color:var(--g2);font-size:1.6em;font-weight:500;transform:scaleY(1.15)}
+.devfest .core{display:flex;flex-direction:column;align-items:center;gap:6px}
+.devfest .word{font-size:1em;letter-spacing:-.5px}
+.devfest .pills{display:flex;gap:6px}
+.devfest .pill{background:#fff;color:#111;font-size:.28em;padding:.25em 1.6em;border-radius:99px;font-weight:600}
+.devfest .pill.y{background:var(--pill2);padding:.25em .7em}
+.devfest.lg{font-size:72px}
+.devfest.sm{font-size:46px}
+.gdg{position:absolute;display:flex;align-items:center;gap:12px;font-size:26px;color:#e8efe9}
+.gdg .m{display:flex;gap:2px}
+.gdg .m b{display:block;width:14px;height:14px;border-radius:3px;transform:rotate(45deg)}
+
+/* ---------- tipografi ---------- */
+.eyebrow{color:var(--g);font-size:22px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:18px}
+h1{font-size:132px;font-weight:400;line-height:1.02;letter-spacing:-2px}
+h2{font-size:72px;font-weight:500;line-height:1.08;letter-spacing:-1px}
+h3{font-size:34px;font-weight:600;margin-bottom:10px}
+p,li{font-size:28px;line-height:1.45;color:#dfe8e3}
+.muted{color:var(--muted)}
+.g{color:var(--g)}
+code,.mono{font-family:var(--mono)}
+p code,li code,td code{font-size:.88em;background:#13221c;border:1px solid var(--line);padding:1px 8px;border-radius:6px;color:#bff0cf}
+
+/* ---------- komponen ---------- */
+.cols{display:grid;gap:56px}
+.cols.c2{grid-template-columns:1fr 1fr}
+.cols.c3{grid-template-columns:repeat(3,1fr)}
+.vline{border-left:2px solid var(--g3);padding-left:32px}
+.card{border:2px solid var(--g3);padding:34px 36px;background:rgba(8,12,13,.6)}
+.big-num{font-size:110px;font-weight:600;color:var(--g);line-height:1;letter-spacing:-3px}
+.num{font-size:120px;font-weight:300;line-height:.9;background:linear-gradient(180deg,var(--g) 30%,rgba(85,193,130,.08) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;min-width:150px}
+.numrow{display:flex;gap:26px;align-items:center}
+.numrow h3{margin:0 0 4px;font-size:36px}
+.numrow p{font-size:24px}
+pre{font-family:var(--mono);font-size:22px;line-height:1.5;background:#0b1512;border:1px solid var(--line);border-radius:14px;padding:26px 30px;color:#dfe8e3;white-space:pre;overflow:hidden}
+pre .k{color:#7fd6a2}pre .s{color:#f2c46d}pre .c{color:#5f7a6e}pre .f{color:#8ab4f8}
+.tag{display:inline-block;font-size:20px;padding:6px 16px;border-radius:99px;border:1.5px solid var(--g3);color:var(--g);margin-right:10px}
+.warn{border-left:4px solid #f2c46d;background:rgba(242,196,109,.07);padding:18px 24px;font-size:24px;color:#f6e3b8;border-radius:0 10px 10px 0}
+table{border-collapse:collapse;width:100%}
+td,th{font-size:24px;text-align:left;padding:14px 18px;border-bottom:1px solid var(--line)}
+th{color:var(--g);font-weight:600;font-size:20px;text-transform:uppercase;letter-spacing:1px}
+
+/* flow diagram */
+.flow{display:flex;align-items:stretch;gap:0}
+.node{border:2px solid var(--g3);border-radius:14px;padding:22px 24px;background:#0b1512;font-size:24px;min-width:180px;text-align:center}
+.node b{display:block;color:var(--g);font-size:18px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.arrow{align-self:center;color:var(--g);font-size:40px;padding:0 14px}
+
+/* terminal demo */
+.term{background:#050807;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.term .bar{display:flex;gap:8px;padding:14px 18px;background:#0e1714;border-bottom:1px solid var(--line);align-items:center}
+.term .bar i{width:13px;height:13px;border-radius:50%;background:#2c3b35}
+.term .bar span{margin-left:14px;font-family:var(--mono);font-size:17px;color:var(--muted)}
+.term .body{font-family:var(--mono);font-size:18px;line-height:1.55;padding:20px 24px;height:470px;white-space:pre-wrap;overflow:hidden}
+.term .ln{opacity:0;transform:translateY(6px);transition:all .3s}
+.term .ln.on{opacity:1;transform:none}
+.term .tc{color:#7fd6a2}.term .dim{color:#5f7a6e}.term .rep{color:#e8efe9}
+.btn{font-family:var(--sans);font-size:20px;background:transparent;color:var(--g);border:2px solid var(--g3);border-radius:99px;padding:10px 24px;cursor:pointer}
+.btn:hover{background:#12241b}
+
+/* loop diagram */
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.step{border:2px solid var(--g3);border-radius:14px;padding:22px;background:#0b1512;position:relative;transition:all .3s}
+.step .n{font-size:18px;color:var(--g);font-weight:600;letter-spacing:1px}
+.step p{font-size:23px;margin-top:6px}
+.step.hl{border-color:var(--g2);box-shadow:0 0 0 4px rgba(88,225,107,.15);background:#10221a}
+
+/* footer */
+.foot{position:absolute;left:120px;right:120px;bottom:40px;display:flex;justify-content:space-between;font-size:18px;color:#5f7a6e}
+
+/* ---------- UI ---------- */
+#progress{position:fixed;left:0;bottom:0;height:4px;background:var(--g);transition:width .3s;z-index:5}
+#notes{position:fixed;right:0;top:0;bottom:0;width:min(520px,40vw);background:#0c1310f2;border-left:1px solid var(--line);padding:28px 30px;transform:translateX(100%);transition:transform .25s;z-index:10;overflow:auto;font-size:17px;line-height:1.6;color:#dfe8e3}
+#notes.open{transform:none}
+#notes h4{color:var(--g);font-size:14px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+#notes ul{padding-left:20px}#notes li{font-size:17px;margin-bottom:8px}
+#overview{position:fixed;inset:0;background:#000e;z-index:20;display:none;overflow:auto;padding:40px}
+#overview.open{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;align-content:start}
+#overview button{background:#0c1310;border:1px solid var(--line);color:#dfe8e3;text-align:left;padding:18px;border-radius:10px;font-family:var(--sans);font-size:16px;cursor:pointer}
+#overview button.cur{border-color:var(--g)}
+#overview button b{color:var(--g);margin-right:8px}
+#hint{position:fixed;right:16px;bottom:14px;font-size:13px;color:#4c6158;z-index:4}
+.copybox{display:flex;align-items:center;gap:20px;background:#0b1512;border:2px solid var(--g3);border-radius:14px;padding:18px 22px 18px 30px}
+.copybox code{flex:1;font-family:var(--mono);font-size:30px;color:#bff0cf;user-select:all}
+.copybox .btn.done{background:var(--g);color:#08110c;border-color:var(--g)}
+.notes-src{display:none}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- ===================== 1. JUDUL ===================== -->
+<section class="slide" data-title="Judul">
+  <div class="glow-bl"></div>
+  <div class="bars tr"><i style="height:120px;opacity:.35"></i><i style="height:330px;opacity:.55"></i><i style="height:470px;opacity:.75"></i><i style="height:600px"></i></div>
+  <div class="gdg" style="top:120px;right:110px"><span class="m"><b style="background:#ea4335"></b><b style="background:#4285f4"></b><b style="background:#34a853"></b><b style="background:#fbbc04"></b></span>GDG Jogjakarta</div>
+  <div class="devfest lg" style="top:190px;left:80px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div style="position:absolute;left:80px;top:400px;right:420px">
+    <div class="eyebrow">Workshop 2 · Cloud</div>
+    <h1 style="font-size:120px">Barista Bot Ops</h1>
+    <p style="font-size:34px;margin-top:22px;color:#cfe0d6">Membangun & men-deploy AI agent dengan Gemini API di Cloud Run</p>
+    <p class="muted" style="margin-top:36px;font-size:26px">Estu Fardani · @tuanpembual</p>
+  </div>
+  <div class="icons" style="right:120px;bottom:90px">
+    <svg viewBox="0 0 64 64"><path d="M20 46h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 11 11 0 0 0 0 23z"/></svg>
+    <svg viewBox="0 0 64 64"><path d="M32 6c3 14 12 23 26 26-14 3-23 12-26 26-3-14-12-23-26-26 14-3 23-12 26-26z"/></svg>
+  </div>
+  <div class="notes-src">
+    <ul><li>Perkenalan singkat.</li><li>Hari ini: membangun AI agent dengan Gemini API, membungkusnya dalam container, lalu men-deploy ke Cloud Run — dalam 50 menit.</li><li>Peserta sudah clone starter repo — kita tidak mengetik kode dari nol.</li></ul>
+  </div>
+</section>
+
+<!-- ===================== 2. PROFIL + REPO ===================== -->
+<section class="slide" data-title="Profil & repo">
+  <div class="glow-r"></div>
+  <div class="devfest sm" style="top:70px;right:110px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div style="position:absolute;left:120px;top:110px;width:430px;height:540px;border:2px solid var(--g3);overflow:hidden;background:#111">
+    <img src="assets/profile.jpg" alt="Estu Fardani" style="width:100%;height:100%;object-fit:cover;object-position:center 20%">
+  </div>
+  <div style="position:absolute;left:620px;top:120px;right:120px">
+    <div class="eyebrow">Hello,</div>
+    <p class="muted" style="font-size:30px">Nama saya</p>
+    <h2 style="font-size:84px;margin-top:4px">Estu Fardani</h2>
+    <p style="font-size:34px;margin-top:18px">Cloud Platform Engineer at INA Digital Edu</p>
+    <p class="muted" style="font-size:26px;margin-top:6px">gcp · k8s · terraform · CI/CD</p>
+    <p class="g mono" style="font-size:28px;margin-top:22px">@tuanpembual</p>
+  </div>
+  <div style="position:absolute;left:120px;right:120px;bottom:90px">
+    <p class="muted" style="font-size:22px;margin-bottom:12px">Clone repo workshop:</p>
+    <div class="copybox">
+      <code id="clone-cmd">git clone https://github.com/tuanpembual/barista-bot.git</code>
+      <button class="btn" data-action="copy" data-target="clone-cmd">Salin</button>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Perkenalan singkat: praktisi cloud (k8s, terraform, CI/CD).</li><li>Minta peserta clone repo sekarang, sambil perkenalan — supaya siap saat Bagian 1.</li><li>Tombol Salin menyalin perintah git clone ke clipboard (paling andal saat dibuka lewat http://localhost).</li></ul></div>
+</section>
+
+<!-- ===================== 2. AGENDA ===================== -->
+<section class="slide" data-title="Agenda">
+  <div class="bars tr"><i style="height:30px;opacity:.3"></i><i style="height:120px;opacity:.5"></i><i style="height:300px;opacity:.75"></i><i style="height:480px"></i></div>
+  <div class="devfest sm" style="top:70px;right:110px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div class="pad">
+    <div class="eyebrow">Agenda · 50 menit</div>
+    <h2>Apa yang kita kerjakan hari ini</h2>
+    <div class="cols c2" style="margin-top:70px;row-gap:46px;width:1300px">
+      <div class="numrow"><span class="num">01</span><div><h3>Konsep</h3><p class="muted">Agent, function calling, agentic loop</p></div></div>
+      <div class="numrow"><span class="num">04</span><div><h3>Deploy</h3><p class="muted">Cloud Run + Secret Manager · 10 mnt</p></div></div>
+      <div class="numrow"><span class="num">02</span><div><h3>Build</h3><p class="muted">Walkthrough kode + test lokal · 15 mnt</p></div></div>
+      <div class="numrow"><span class="num">05</span><div><h3>CI/CD</h3><p class="muted">Satu perintah Cloud Build · 5 mnt</p></div></div>
+      <div class="numrow"><span class="num">03</span><div><h3>Containerize</h3><p class="muted">Docker multi-stage · 10 mnt</p></div></div>
+      <div class="numrow"><span class="num">06</span><div><h3>Selanjutnya</h3><p class="muted">Data sungguhan, FAQ</p></div></div>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Pembagian waktu: setup 5 + build 15 + container 10 + deploy 10 + CI/CD 5 = 45, sisa 5 menit buffer.</li><li>Kalau molor: prioritaskan URL publik (Bagian 3). Bagian 4 bisa jadi demo trainer.</li></ul></div>
+</section>
+
+<!-- ===================== 3. KENAPA ===================== -->
+<section class="slide" data-title="Kenapa bangun sendiri?">
+  <div class="glow-tr"></div>
+  <div class="devfest sm" style="top:70px;right:110px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div class="pad">
+    <div class="eyebrow">Kenapa bangun sendiri?</div>
+    <h2 style="font-size:66px;width:1100px">Gemini app & Gemini API —<br>otak yang sama, peran berbeda</h2>
+    <p class="muted" style="margin-top:22px;width:1100px">Banyak dari kita sudah memakai Gemini, ChatGPT, Claude, atau Copilot setiap hari. Kenapa perlu agent sendiri?</p>
+    <div class="cols c3" style="margin-top:70px">
+      <div class="vline"><h3>Bisa dipanggil sistem</h3><p class="muted">Aplikasi chat menunggu orang mengetik. Agent di HTTP bisa dipanggil alert, cron, Slack, CI.</p></div>
+      <div class="vline"><h3>Dekat dengan sistem internal</h3><p class="muted">Berjalan di GCP project sendiri, dengan service account yang izinnya kita atur.</p></div>
+      <div class="vline"><h3>Dipakai bersama tim</h3><p class="muted">Satu URL Cloud Run, perilaku yang sama untuk semua orang.</p></div>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Bukan soal kemampuan model — modelnya sama. Ini soal arsitektur.</li><li>Gemini app & Gemini Code Assist di VS Code: bagus untuk eksplorasi dan kerja harian.</li><li>Agent buatan sendiri: untuk pekerjaan otomatis, terhubung ke sistem internal, dipakai tim.</li><li>Kalimat kunci: "bukan ganti Gemini app dengan Barista Bot — pakai sesuai konteks".</li></ul></div>
+</section>
+
+<!-- ===================== 4. APA YANG DIBANGUN ===================== -->
+<section class="slide" data-title="Apa yang dibangun">
+  <div class="pad">
+    <div class="eyebrow">Apa yang dibangun</div>
+    <h2>Barista Bot: agent ops untuk Cloud Run</h2>
+    <p class="muted" style="margin-top:16px">Menerima pertanyaan bahasa natural → investigasi sendiri → ringkasan + rekomendasi.</p>
+    <div class="flow" style="margin-top:70px">
+      <div class="node"><b>Operator</b>"Ada service<br>yang bermasalah?"</div>
+      <div class="arrow">→</div>
+      <div class="node"><b>Cloud Run</b>Go · <code style="font-family:var(--mono)">POST /ask</code></div>
+      <div class="arrow">⇄</div>
+      <div class="node" style="border-color:var(--g)"><b>Gemini API</b>memilih tool<br>yang perlu dipanggil</div>
+      <div class="arrow">⇄</div>
+      <div class="node" style="text-align:left;min-width:330px"><b>Tools</b><span class="mono" style="font-size:20px;line-height:1.7">list_services<br>check_service_health<br>get_recent_logs<br>get_deployment_status</span></div>
+    </div>
+    <div style="margin-top:56px">
+      <span class="tag">Go 1.27 · net/http</span><span class="tag">google.golang.org/genai</span><span class="tag">Docker multi-stage</span><span class="tag">Cloud Run</span><span class="tag">Secret Manager</span><span class="tag">Cloud Build</span>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Data service di workshop adalah simulasi: 3 service — payment-api (healthy), user-service (degraded), notification-worker (unhealthy).</li><li>Kenapa Go: cold start cepat, single binary, image ~29MB — penting untuk Cloud Run yang scale-to-zero.</li></ul></div>
+</section>
+
+<!-- ===================== 5. CHATBOT VS AGENT ===================== -->
+<section class="slide" data-title="Chatbot vs Agent">
+  <div class="glow-r"></div>
+  <div class="pad">
+    <div class="eyebrow">Konsep 1</div>
+    <h2>Chatbot menjawab.<br>Agent <span class="g">bertindak</span>.</h2>
+    <div class="cols c2" style="margin-top:64px">
+      <div class="card"><h3>Chatbot</h3><p class="muted">Pesan → model menjawab → selesai.<br>Satu kali jalan.</p></div>
+      <div class="card" style="border-color:var(--g)"><h3 class="g">Agent</h3><p class="muted">Model <b style="color:#fff">memutuskan sendiri</b> tool apa yang dipanggil, berapa kali, dalam urutan apa — sampai tugasnya selesai.</p></div>
+    </div>
+    <pre style="margin-top:40px;font-size:21px"><span class="c">Operator: "Ada service yang bermasalah?"</span>
+  → list_services()                               <span class="c">← tindakan 1: user-service degraded</span>
+  → get_recent_logs("user-service", "ERROR")      <span class="c">← tindakan 2: connection refused (database)</span>
+  → <span class="s">"user-service degraded karena koneksi DB ditolak sejak 30 menit lalu"</span></pre>
+  </div>
+  <div class="notes-src"><ul><li>Kata kuncinya: memutuskan sendiri. Tidak ada if-else "kalau down, cek log" di kode kita.</li></ul></div>
+</section>
+
+<!-- ===================== 6. FUNCTION CALLING ===================== -->
+<section class="slide" data-title="Function calling">
+  <div class="pad">
+    <div class="eyebrow">Konsep 2 · Function calling</div>
+    <h2>Gemini tidak menjalankan kode.<br>Ia <span class="g">meminta</span> kode dijalankan.</h2>
+    <div class="cols c2" style="margin-top:56px;align-items:start">
+      <pre style="font-size:21px"><span class="c">// 1. kita kirim pesan + daftar tools</span>
+message: <span class="s">"Cek status user-service"</span>
+tools:   [list_services, check_service_health,
+          get_recent_logs, get_deployment_status]
+
+<span class="c">// 2. Gemini membalas — bukan teks, tapi:</span>
+function_call: {
+  name: <span class="s">"check_service_health"</span>,
+  args: {service_name: <span class="s">"user-service"</span>}
+}
+
+<span class="c">// 3. kode KITA yang mengeksekusi,</span>
+<span class="c">//    hasilnya dikirim balik ke Gemini</span></pre>
+      <div>
+        <div class="card" style="margin-bottom:28px"><h3>Analogi</h3><p class="muted"><code>toolDeclarations</code> = <b style="color:#fff">buku menu</b><br><code>tools.go</code> = <b style="color:#fff">dapur</b><br>Gemini memesan dari menu, kode kita yang memasak.</p></div>
+        <div class="card" style="border-color:var(--g)"><h3 class="g">Kenapa penting</h3><p class="muted">Kita yang mengontrol apa yang boleh dan tidak boleh dijalankan. Deskripsi tool yang jelas = agent memilih tool yang tepat.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Ini poin keamanan: model hanya "minta tolong". Eksekusi selalu di server kita.</li><li>Gemini memilih tool berdasarkan deskripsi — kualitas deskripsi menentukan kualitas agent.</li></ul></div>
+</section>
+
+<!-- ===================== 7. AGENTIC LOOP ===================== -->
+<section class="slide" data-title="Agentic loop" data-loop>
+  <div class="pad">
+    <div class="eyebrow">Konsep 3 · Agentic loop</div>
+    <h2>Ulangi sampai tidak ada lagi function call</h2>
+    <div class="loop" style="margin-top:60px">
+      <div class="step"><div class="n">01 · KIRIM</div><p>Pesan + riwayat + daftar tools ke Gemini</p></div>
+      <div class="step"><div class="n">02 · CEK</div><p>Ada <code>function_call</code> di respons?</p></div>
+      <div class="step"><div class="n">03 · EKSEKUSI</div><p><code>executeTool()</code> lalu tambahkan hasil ke riwayat</p></div>
+      <div class="step"><div class="n">04 · SELESAI</div><p>Tidak ada call → ambil teks final</p></div>
+    </div>
+    <pre style="margin-top:44px;font-size:21px"><span class="k">for</span> <span class="k">range</span> 5 {                                    <span class="c">// batas aman: maksimal 5 putaran</span>
+    resp, err := generateWithRetry(ctx, client, contents, config)
+    calls := resp.FunctionCalls()
+    <span class="k">if</span> len(calls) == 0 { <span class="k">return</span> teksFinal }           <span class="c">// 04</span>
+    <span class="k">for</span> _, fc := <span class="k">range</span> calls {
+        result := executeTool(ctx, fc.Name, fc.Args)    <span class="c">// 03</span>
+        ...
+    }
+}</pre>
+    <div style="margin-top:22px"><button class="btn" data-action="loop">▶ Animasikan loop</button></div>
+  </div>
+  <div class="notes-src"><ul><li>Klik tombol untuk animasi 01→02→03→02→03→02→04.</li><li>Batas 5 putaran mencegah infinite loop. Pertanyaan ops biasanya selesai dalam 2–3 putaran.</li><li>Gemini bisa meminta beberapa tool sekaligus dalam satu putaran — loop mengeksekusi semuanya.</li></ul></div>
+</section>
+
+<!-- ===================== 8. ISTILAH ===================== -->
+<section class="slide" data-title="Istilah penting">
+  <div class="glow-tr"></div>
+  <div class="pad">
+    <div class="eyebrow">Istilah penting</div>
+    <h2>Tiga istilah yang akan sering muncul</h2>
+    <div class="cols c3" style="margin-top:70px">
+      <div class="vline"><h3 class="mono" style="font-size:30px">tools.go</h3><p class="muted">Fungsi Go biasa yang benar-benar dijalankan saat agent butuh informasi. Di workshop: data simulasi.</p></div>
+      <div class="vline"><h3 class="mono" style="font-size:30px">toolDeclarations</h3><p class="muted">"Daftar menu" untuk Gemini: nama tool, deskripsi, parameter. Gemini memilih dari sini.</p></div>
+      <div class="vline"><h3 style="font-size:30px">RAG</h3><p class="muted">Retrieval-Augmented Generation: cari dokumen relevan dulu, baru menjawab berdasarkan dokumen itu.</p></div>
+    </div>
+    <div class="card" style="margin-top:64px;display:flex;gap:34px;align-items:center;border-color:var(--g3)">
+      <span style="font-size:54px">💡</span>
+      <p style="font-size:26px">Pernah lihat <b style="color:#fff">n8n</b>? Tool otomasi visual (no-code) ini punya blok <b class="g">"AI Agent"</b> yang isinya konsep yang sama: <b style="color:#fff">model + tools + loop</b>. Bedanya, hari ini kita menulisnya sendiri — jadi setiap langkahnya terlihat.</p>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>n8n: cukup disebut sekilas — banyak peserta belum kenal. Intinya: blok "AI Agent" di n8n = agent.go yang kita bangun, hanya dirakit dengan klik. Kalau ada yang tanya lebih jauh: n8n cocok untuk integrasi cepat antar layanan; kode sendiri cocok saat butuh kontrol penuh, testing, dan review lewat Git.</li><li>Barista Bot tidak memakai RAG — datanya lewat tools. RAG cocok untuk runbook/SOP, dan bisa dijadikan salah satu tool.</li></ul></div>
+</section>
+
+<!-- ===================== 9. CLOUD RUN ===================== -->
+<section class="slide" data-title="Kenapa Cloud Run">
+  <div class="bars tl"><i style="height:120px;opacity:.35"></i><i style="height:300px;opacity:.55"></i><i style="height:430px;opacity:.75"></i><i style="height:560px"></i></div>
+  <div class="devfest sm" style="top:150px;left:90px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div style="position:absolute;left:90px;top:440px;width:640px">
+    <div class="eyebrow">Kenapa Cloud Run?</div>
+    <h2 style="font-size:84px">Deploy cukup<br>push image</h2>
+  </div>
+  <div style="position:absolute;left:820px;top:150px;right:110px">
+    <div style="display:flex;gap:40px;align-items:center"><span class="big-num">0→N</span><div><h3>Scale to zero</h3><p class="muted" style="font-size:24px">Tidak ada traffic, tidak ada biaya instance.</p></div></div>
+    <div class="cols c2" style="gap:36px;margin-top:56px">
+      <div class="card"><span class="big-num" style="font-size:78px">29MB</span><h3 class="g" style="margin-top:10px">Image Go</h3><p class="muted" style="font-size:22px">Multi-stage build: cold start cepat.</p></div>
+      <div class="card"><span class="big-num" style="font-size:78px">$0</span><h3 class="g" style="margin-top:10px">Free tier</h3><p class="muted" style="font-size:22px">2 juta request/bulan — cukup untuk workshop.</p></div>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Dibanding GKE/VM: tidak perlu kelola server atau cluster.</li><li>Stateless by design — cocok, karena setiap request /ask independen.</li><li>Kekurangan: cold start ~1–3 detik.</li></ul></div>
+</section>
+
+<!-- ===================== 10. BAGIAN 1 BUILD ===================== -->
+<section class="slide" data-title="Bagian 1 — Build">
+  <div class="pad">
+    <div class="eyebrow">Bagian 1 · Build · 15 menit</div>
+    <h2>Tiga file, tiga tanggung jawab</h2>
+    <div class="cols c2" style="margin-top:56px;align-items:start">
+      <table>
+        <tr><th>File</th><th>Isi</th></tr>
+        <tr><td><code>main.go</code></td><td>HTTP server: <code>GET /</code>, <code>POST /ask</code></td></tr>
+        <tr><td><code>agent.go</code></td><td>System prompt + agentic loop + retry</td></tr>
+        <tr><td><code>tools.go</code></td><td>4 tools + data simulasi</td></tr>
+      </table>
+      <pre style="font-size:21px"><span class="c"># clone & jalankan</span>
+git clone https://github.com/tuanpembual/barista-bot
+cd barista-bot
+export GEMINI_API_KEY=<span class="s">"&lt;api-key-anda&gt;"</span>
+go run .
+
+<span class="c"># terminal kedua</span>
+curl -X POST localhost:8080/ask \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"message":"Ada service yang bermasalah?"}'</span></pre>
+    </div>
+    <div class="warn" style="margin-top:36px">⏱️ Satu request butuh ±10–15 detik — Gemini dipanggil beberapa kali. Normal, bukan hang.</div>
+  </div>
+  <div class="notes-src"><ul><li>Walkthrough, bukan mengetik. Buka file di editor, jelaskan alurnya.</li><li>API key dari aistudio.google.com → Get API key.</li><li>Tunjukkan baris "tool call:" di terminal server.</li></ul></div>
+</section>
+
+<!-- ===================== 11. DEMO TERMINAL ===================== -->
+<section class="slide" data-title="Demo: agent bekerja" data-demo>
+  <div class="pad" style="padding-top:64px">
+    <div class="eyebrow">Demo · hasil nyata dari test run</div>
+    <h2 style="font-size:56px">Agent memilih sendiri urutan investigasinya</h2>
+    <div class="cols c2" style="margin-top:30px;gap:36px">
+      <div class="term"><div class="bar"><i></i><i></i><i></i><span>go run .</span></div><div class="body" id="demo-log"></div></div>
+      <div class="term"><div class="bar"><i></i><i></i><i></i><span>curl POST /ask</span></div><div class="body" id="demo-reply"></div></div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:14px"><button class="btn" data-action="demo">▶ Putar ulang</button><span class="muted" style="font-size:20px;align-self:center">Rekaman dari test run — tidak memanggil API.</span></div>
+  </div>
+  <div class="notes-src"><ul><li>Perhatikan putaran ke-2: Gemini memanggil 4 tool <b>sekaligus</b> (health + log untuk dua service).</li><li>Ini output asli dari uji coba, diputar ulang tanpa koneksi internet — aman kalau Wi-Fi venue bermasalah.</li><li>Kalau Wi-Fi bagus, lakukan demo live di terminal.</li></ul></div>
+</section>
+
+<!-- ===================== 12. BAGIAN 2 CONTAINERIZE ===================== -->
+<section class="slide" data-title="Bagian 2 — Containerize">
+  <div class="glow-r"></div>
+  <div class="pad">
+    <div class="eyebrow">Bagian 2 · Containerize · 10 menit</div>
+    <h2>Multi-stage: build besar, runtime kecil</h2>
+    <div class="cols c2" style="margin-top:50px;align-items:start">
+      <pre style="font-size:22px"><span class="c"># Stage 1: compile</span>
+<span class="k">FROM</span> golang:1.27-alpine <span class="k">AS</span> builder
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> go.mod go.sum ./
+<span class="k">RUN</span> go mod download
+<span class="k">COPY</span> . .
+<span class="k">RUN</span> CGO_ENABLED=0 go build -o barista-bot .
+
+<span class="c"># Stage 2: hanya binary</span>
+<span class="k">FROM</span> alpine:3.20
+<span class="k">RUN</span> adduser -D appuser
+<span class="k">COPY</span> --from=builder /app/barista-bot .
+<span class="k">USER</span> appuser
+<span class="k">CMD</span> [<span class="s">"./barista-bot"</span>]</pre>
+      <div>
+        <pre style="font-size:21px">docker build -t barista-bot:local <span class="s">.</span>
+docker run --rm -p 8080:8080 \
+  -e GEMINI_API_KEY=$GEMINI_API_KEY \
+  barista-bot:local
+
+<span class="c"># untuk Cloud Run: wajib amd64</span>
+docker build --platform linux/amd64 \
+  -t barista-bot:amd64 <span class="s">.</span></pre>
+        <div class="warn" style="margin-top:24px">Mac M-series build <code>arm64</code> secara default. Lupa <code>--platform linux/amd64</code> → Cloud Run error <code>exec format error</code>.</div>
+        <div class="warn" style="margin-top:16px">Perhatikan titik <code>.</code> di akhir <code>docker build</code>.</div>
+      </div>
+    </div>
+  </div>
+  <div class="notes-src"><ul><li>Builder ~300MB, runtime ~29MB.</li><li>USER appuser: container tidak jalan sebagai root.</li><li>--rm: container terhapus otomatis setelah dihentikan.</li></ul></div>
+</section>
+
+<!-- ===================== 13. BAGIAN 3 DEPLOY ===================== -->
+<section class="slide" data-title="Bagian 3 — Deploy">
+  <div class="pad">
+    <div class="eyebrow">Bagian 3 · Deploy · 10 menit</div>
+    <h2>API key tidak pernah masuk image</h2>
+    <div class="flow" style="margin-top:50px">
+      <div class="node"><b>1 · Push</b>Artifact Registry</div><div class="arrow">→</div>
+      <div class="node"><b>2 · Secret</b>Secret Manager<br><span class="mono" style="font-size:18px">gemini-api-key</span></div><div class="arrow">→</div>
+      <div class="node"><b>3 · IAM</b>service account<br>boleh baca secret</div><div class="arrow">→</div>
+      <div class="node" style="border-color:var(--g)"><b>4 · Deploy</b>URL HTTPS publik</div>
+    </div>
+    <pre style="margin-top:44px;font-size:21px">gcloud run deploy barista-bot \
+  --image=$IMAGE --region=$REGION \
+  --allow-unauthenticated \
+  --set-secrets=<span class="s">"GEMINI_API_KEY=gemini-api-key:latest"</span> \
+  --memory=512Mi --min-instances=0 --max-instances=5
+
+<span class="c"># lihat agent bekerja secara live (terminal kedua)</span>
+gcloud beta run services logs tail barista-bot --region=$REGION</pre>
+  </div>
+  <div class="notes-src"><ul><li>Secret sudah ada (error already exists)? pakai gcloud secrets versions add.</li><li>Ambil key lagi di terminal baru: export GEMINI_API_KEY=$(gcloud secrets versions access latest --secret=gemini-api-key)</li><li>logs tail: pertama kali akan minta install komponen beta → jawab Y.</li></ul></div>
+</section>
+
+<!-- ===================== 14. BAGIAN 4 CI/CD ===================== -->
+<section class="slide" data-title="Bagian 4 — Cloud Build">
+  <div class="glow-tr"></div>
+  <div class="pad">
+    <div class="eyebrow">Bagian 4 · CI/CD · 5 menit</div>
+    <h2>Build → push → deploy, satu perintah</h2>
+    <div class="flow" style="margin-top:50px">
+      <div class="node"><b>Step 1</b>docker build<br>linux/amd64</div><div class="arrow">→</div>
+      <div class="node"><b>Step 2</b>docker push<br><span class="mono" style="font-size:18px">app:$SHORT_SHA</span></div><div class="arrow">→</div>
+      <div class="node" style="border-color:var(--g)"><b>Step 3</b>gcloud run deploy<br>revision baru</div>
+    </div>
+    <div class="cols c2" style="margin-top:44px;align-items:start">
+      <pre style="font-size:21px">gcloud builds submit \
+  --config=cloudbuild.yaml \
+  --substitutions=SHORT_SHA=v2 .</pre>
+      <div class="warn">Project baru: Cloud Build berjalan sebagai <b>compute default SA</b> tanpa role Editor. Beri <code>run.admin</code>, <code>iam.serviceAccountUser</code>, <code>artifactregistry.writer</code>, <code>logging.logWriter</code>, <code>storage.objectViewer</code>.</div>
+    </div>
+    <p class="muted" style="margin-top:30px;font-size:24px">⏱️ ±3 menit. URL tidak berubah — yang berubah revision: <code>barista-bot-00001</code> → <code>00002</code>.</p>
+  </div>
+  <div class="notes-src"><ul><li>Jalankan builds submit di awal segmen, jelaskan cloudbuild.yaml sambil menunggu.</li><li>$PROJECT_ID di cloudbuild.yaml diisi otomatis oleh Cloud Build.</li><li>Test: gcloud run services describe → revision & image; curl ke URL yang sama.</li></ul></div>
+</section>
+
+<!-- ===================== 15. CHECKLIST ===================== -->
+<section class="slide" data-title="Checklist">
+  <div class="bars tr"><i style="height:60px;opacity:.3"></i><i style="height:200px;opacity:.5"></i><i style="height:360px;opacity:.75"></i><i style="height:520px"></i></div>
+  <div class="pad">
+    <div class="eyebrow">Selesai kalau…</div>
+    <h2>Workshop checklist</h2>
+    <div style="margin-top:56px;display:grid;gap:22px;width:1080px" id="checklist">
+      <label class="ck"><input type="checkbox"> Agent menjawab lewat <code>POST /ask</code></label>
+      <label class="ck"><input type="checkbox"> Minimal dua <code>tool call</code> dalam satu request</label>
+      <label class="ck"><input type="checkbox"> Docker image dibangun & dijalankan lokal</label>
+      <label class="ck"><input type="checkbox"> Cloud Run memberi URL HTTPS publik</label>
+      <label class="ck"><input type="checkbox"> API key hanya di Secret Manager — tidak di kode, image, atau Git</label>
+      <label class="ck"><input type="checkbox"> Cloud Build: build + deploy dari satu perintah</label>
+    </div>
+  </div>
+  <style>.ck{font-size:30px;display:flex;gap:20px;align-items:center;color:#dfe8e3;cursor:pointer}.ck input{width:30px;height:30px;accent-color:var(--g)}</style>
+  <div class="notes-src"><ul><li>Minta peserta angkat tangan per item — cepat tahu siapa yang tertinggal.</li><li>Ingatkan Cleanup setelah sesi: hapus service, Artifact Registry, secret.</li></ul></div>
+</section>
+
+<!-- ===================== 16. MODE REAL ===================== -->
+<section class="slide" data-title="Mode real (lokal)">
+  <div class="pad">
+    <div class="eyebrow">Setelah Cleanup · Mode real</div>
+    <h2>Data simulasi → API GCP sungguhan</h2>
+    <p class="muted" style="margin-top:14px">Yang berubah hanya sumber data. <code>toolDeclarations</code> dan agentic loop tetap sama.</p>
+    <table style="margin-top:40px">
+      <tr><th>Tool</th><th>Simulasi</th><th>Real · tools_real.go</th></tr>
+      <tr><td><code>list_services</code></td><td class="muted">map services</td><td>Cloud Run Admin API</td></tr>
+      <tr><td><code>check_service_health</code></td><td class="muted">map services</td><td>Cloud Run Admin API</td></tr>
+      <tr><td><code>get_recent_logs</code></td><td class="muted">map mockLogs</td><td>Cloud Logging API</td></tr>
+      <tr><td><code>get_deployment_status</code></td><td class="muted">map services</td><td>Cloud Run Admin API</td></tr>
+    </table>
+    <pre style="margin-top:34px;font-size:21px">gcloud auth application-default login
+TOOLS_MODE=real GOOGLE_CLOUD_PROJECT=$PROJECT_ID go run .   <span class="c"># hanya di lokal</span></pre>
+  </div>
+  <div class="notes-src"><ul><li>Izin cukup baca: roles/run.viewer + roles/logging.viewer.</li><li>Hanya lokal — jangan deploy mode real ke URL publik, karena memperlihatkan info infrastruktur sungguhan.</li><li>Setelah Cleanup, agent akan bilang "tidak ada service" — itu jawaban benar, bukti datanya sungguhan.</li><li>Halaman login ADC: centang semua izin, termasuk Google Cloud data — kalau tidak, login gagal.</li></ul></div>
+</section>
+
+<!-- ===================== 17. FAQ ===================== -->
+<section class="slide" data-title="FAQ: perlu RAG?">
+  <div class="glow-r"></div>
+  <div class="pad">
+    <div class="eyebrow">FAQ</div>
+    <h2>"Kalau mau data sungguhan,<br>harus bikin RAG?"</h2>
+    <div class="cols c2" style="margin-top:56px">
+      <div class="card"><h3>API sungguhan</h3><p class="muted">Untuk data yang <b style="color:#fff">berubah terus</b>: status service, log, deployment.</p></div>
+      <div class="card"><h3>RAG</h3><p class="muted">Untuk pengetahuan yang <b style="color:#fff">relatif tetap</b>: runbook, SOP, dokumentasi.</p></div>
+    </div>
+    <p style="margin-top:44px;font-size:30px">RAG sendiri adalah <span class="g">salah satu jenis tool</span>. Paling kuat jika digabung:</p>
+    <p class="mono" style="margin-top:16px;font-size:23px;color:#bff0cf">list_services → get_recent_logs → search_runbook → diagnosis + langkah sesuai SOP</p>
+  </div>
+  <div class="notes-src"><ul><li>Tanpa tools sama sekali, Barista Bot jadi chatbot biasa — bisa mengarang status service.</li><li>Tool yang mengubah sesuatu (restart, rollback) sebaiknya tetap butuh konfirmasi manusia.</li></ul></div>
+</section>
+
+<!-- ===================== 18. PENUTUP ===================== -->
+<section class="slide" data-title="Terima kasih">
+  <div class="glow-bl"></div>
+  <div class="bars tr"><i style="height:120px;opacity:.35"></i><i style="height:330px;opacity:.55"></i><i style="height:470px;opacity:.75"></i><i style="height:600px"></i></div>
+  <div class="gdg" style="top:120px;right:110px"><span class="m"><b style="background:#ea4335"></b><b style="background:#4285f4"></b><b style="background:#34a853"></b><b style="background:#fbbc04"></b></span>GDG Jogjakarta</div>
+  <div class="devfest lg" style="top:190px;left:80px"><span class="br">{</span><span class="core"><span class="word">DevFest</span><span class="pills"><span class="pill">Jogjakarta</span><span class="pill y">2026</span></span></span><span class="br">}</span></div>
+  <div style="position:absolute;left:80px;top:420px">
+    <h1>Terima kasih</h1>
+    <p style="font-size:32px;margin-top:30px" class="mono">github.com/tuanpembual/barista-bot</p>
+    <p class="muted" style="margin-top:14px">Jangan lupa Cleanup: service, Artifact Registry, secret.</p>
+  </div>
+  <div class="icons" style="right:120px;bottom:90px">
+    <svg viewBox="0 0 64 64"><path d="M20 46h26a10 10 0 0 0 1-20 14 14 0 0 0-27-3 11 11 0 0 0 0 23z"/></svg>
+    <svg viewBox="0 0 64 64"><path d="M32 6c3 14 12 23 26 26-14 3-23 12-26 26-3-14-12-23-26-26 14-3 23-12 26-26z"/></svg>
+  </div>
+  <div class="notes-src"><ul><li>Buka sesi tanya jawab.</li><li>Pertanyaan yang sering muncul: data dummy vs real, perlu RAG?, keamanan akses produksi, model Gemini mana.</li></ul></div>
+</section>
+
+</div></div>
+
+<aside id="notes"><h4>Catatan pembicara</h4><div id="notes-body"></div></aside>
+<div id="overview"></div>
+<div id="progress"></div>
+<div id="hint">← → navigasi · N catatan · O semua slide · F layar penuh</div>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+const stage=document.getElementById('stage');
+function resize(){const s=Math.min(innerWidth/1600,innerHeight/900);stage.style.transform=`scale(${s})`}
+addEventListener('resize',resize);resize();
+
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  document.getElementById('progress').style.width=((cur+1)/slides.length*100)+'%';
+  const n=slides[cur].querySelector('.notes-src');
+  document.getElementById('notes-body').innerHTML=`<p style="color:#5f7a6e;margin-bottom:10px">${cur+1}/${slides.length} · ${slides[cur].dataset.title}</p>`+(n?n.innerHTML:'');
+  if(location.hash!=='#'+(cur+1))history.replaceState(null,'','#'+(cur+1));
+  if(slides[cur].hasAttribute('data-demo'))playDemo();
+}
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT')return;
+  const k=e.key;
+  if(['ArrowRight','PageDown',' '].includes(k)){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','PageUp'].includes(k)){e.preventDefault();go(cur-1)}
+  else if(k==='Home')go(0);else if(k==='End')go(slides.length-1);
+  else if(k==='n'||k==='N')document.getElementById('notes').classList.toggle('open');
+  else if(k==='o'||k==='O')toggleOverview();
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}
+  else if(k==='Escape'){document.getElementById('notes').classList.remove('open');document.getElementById('overview').classList.remove('open')}
+});
+function toggleOverview(){
+  const o=document.getElementById('overview');
+  o.innerHTML=slides.map((s,i)=>`<button class="${i===cur?'cur':''}" data-i="${i}"><b>${String(i+1).padStart(2,'0')}</b>${s.dataset.title}</button>`).join('');
+  o.classList.toggle('open');
+}
+document.getElementById('overview').addEventListener('click',e=>{const b=e.target.closest('button');if(b){go(+b.dataset.i);toggleOverview()}});
+addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1));if(n&&n-1!==cur)go(n-1)});
+
+/* animasi agentic loop */
+let loopTimer;
+function playLoop(){
+  const steps=[...slides.find(s=>s.hasAttribute('data-loop')).querySelectorAll('.step')];
+  const seq=[0,1,2,1,2,1,3];let i=0;clearInterval(loopTimer);
+  const tick=()=>{steps.forEach((s,k)=>s.classList.toggle('hl',k===seq[i]));i++;if(i>=seq.length)clearInterval(loopTimer)};
+  tick();loopTimer=setInterval(tick,900);
+}
+
+/* demo terminal — output asli dari test run lokal, diputar ulang */
+const demoLog=[
+  ['dim','barista-bot listening on :8080'],
+  ['dim','# POST /ask "Ada service yang bermasalah?"'],
+  ['tc','tool call: list_services map[]'],
+  ['tc','tool call: check_service_health map[service_name:notification-worker]'],
+  ['tc','tool call: get_recent_logs map[service_name:notification-worker severity:ERROR]'],
+  ['tc','tool call: check_service_health map[service_name:user-service]'],
+  ['tc','tool call: get_recent_logs map[service_name:user-service severity:ERROR]'],
+];
+const demoReply=`Ditemukan 2 service yang bermasalah dari total 3 service:
+
+1. notification-worker — UNHEALTHY
+   0 instance · container gagal start
+   → periksa konfigurasi env/secret, lalu deploy revisi baru
+
+2. user-service — DEGRADED
+   log: dial tcp: connection refused (database)
+   → cek health database & konektivitas jaringan
+
+payment-api: healthy, 3 instance aktif.`;
+let demoTimers=[];
+function playDemo(){
+  demoTimers.forEach(clearTimeout);demoTimers=[];
+  const L=document.getElementById('demo-log'),R=document.getElementById('demo-reply');
+  L.innerHTML=demoLog.map(([c,t])=>`<div class="ln ${c}">${t}</div>`).join('');
+  R.innerHTML='<div class="ln dim">menunggu jawaban agent…</div>';
+  const lines=[...L.children];
+  const at=[200,700,1800,3600,3700,3800,3900];
+  lines.forEach((ln,i)=>demoTimers.push(setTimeout(()=>ln.classList.add('on'),at[i])));
+  demoTimers.push(setTimeout(()=>R.firstChild.classList.add('on'),900));
+  demoTimers.push(setTimeout(()=>{R.innerHTML=`<div class="ln rep on">${demoReply.replace(/</g,'&lt;')}</div>`},5600));
+}
+document.addEventListener('click',e=>{
+  const a=e.target.closest('[data-action]');if(!a)return;
+  if(a.dataset.action==='loop')playLoop();
+  if(a.dataset.action==='demo')playDemo();
+  if(a.dataset.action==='copy'){
+    const t=document.getElementById(a.dataset.target).textContent;
+    const ok=()=>{a.textContent='Tersalin ✓';a.classList.add('done');setTimeout(()=>{a.textContent='Salin';a.classList.remove('done')},1800)};
+    if(navigator.clipboard&&isSecureContext){navigator.clipboard.writeText(t).then(ok)}
+    else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();ok()}
+  }
+});
+
+go((parseInt(location.hash.slice(1))||1)-1);
+</script>
+</body>
+</html>
