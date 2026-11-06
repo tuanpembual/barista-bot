@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -167,7 +168,12 @@ var toolDeclarations = &genai.Tool{
 	},
 }
 
-func executeTool(name string, args map[string]any) map[string]any {
+// executeTool menjalankan tool yang diminta Gemini.
+// TOOLS_MODE=real → data sungguhan dari GCP (lihat tools_real.go); selain itu → data simulasi di atas.
+func executeTool(ctx context.Context, name string, args map[string]any) map[string]any {
+	if realMode() {
+		return executeRealTool(ctx, name, args)
+	}
 	switch name {
 	case "list_services":
 		return listServices()

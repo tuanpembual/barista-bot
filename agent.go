@@ -98,7 +98,7 @@ func runAgent(ctx context.Context, userMessage string) (string, error) {
 		var toolParts []*genai.Part
 		for _, fc := range calls {
 			log.Printf("tool call: %s %v", fc.Name, fc.Args)
-			result := executeTool(fc.Name, fc.Args)
+			result := executeTool(ctx, fc.Name, fc.Args)
 			toolParts = append(toolParts, genai.NewPartFromFunctionResponse(fc.Name, result))
 		}
 		contents = append(contents, genai.NewContentFromParts(toolParts, "user"))

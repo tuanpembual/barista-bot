@@ -1,12 +1,12 @@
 # Jalankan manual:
-#   gcloud builds submit --config=cloudbuild.yaml --substitutions=SHORT_SHA=v2 .
+#   gcloud builds submit --config=cloudbuild.yaml --substitutions=_TAG=v2 .
 # $PROJECT_ID otomatis diisi Cloud Build sesuai project aktif — tidak perlu diedit.
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--platform', 'linux/amd64', '-t', '$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$SHORT_SHA', '.']
+    args: ['build', '--platform', 'linux/amd64', '-t', '$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$_TAG', '.']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$SHORT_SHA']
+    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$_TAG']
 
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
@@ -14,12 +14,13 @@ steps:
       - run
       - deploy
       - barista-bot
-      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$SHORT_SHA
+      - --image=$_REGION-docker.pkg.dev/$PROJECT_ID/barista-bot/app:$_TAG
       - --region=$_REGION
       - --platform=managed
 
 substitutions:
-  _REGION: asia-southeast1
+  _REGION: asia-southeast2
+  _TAG: v2
 
 options:
   logging: CLOUD_LOGGING_ONLY
