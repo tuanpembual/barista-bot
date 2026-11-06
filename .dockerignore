@@ -1,0 +1,6 @@
+barista-bot
+.env
+.env.*
+.git
+.gitignore
+*.md

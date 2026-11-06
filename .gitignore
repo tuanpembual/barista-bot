@@ -1,0 +1,10 @@
+# binary hasil go build
+/barista-bot
+*.exe
+# secrets
+.env
+.env.*
+!.env.example
+*.json.key
+service-account*.json
+.DS_Store
